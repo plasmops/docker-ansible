@@ -1,4 +1,4 @@
-[![Go to Docker Hub](https://img.shields.io/badge/Docker%20Hub-%E2%86%92-blue.svg)](https://hub.docker.com/r/plasmops/ansible/) [![](https://images.microbadger.com/badges/version/stackfeed/alpine-python3.svg)](https://microbadger.com/images//plasmops/ansible/) [![](https://images.microbadger.com/badges/image/stackfeed/alpine-python3.svg)](https://microbadger.com/images//plasmops/ansible/)
+[![Go to Docker Hub](https://img.shields.io/badge/Docker%20Hub-%E2%86%92-blue.svg)](https://hub.docker.com/r/plasmops/ansible/) [![](https://images.microbadger.com/badges/version/plasmops/ansible.svg)](https://microbadger.com/images/plasmops/ansible/) [![](https://images.microbadger.com/badges/image/plasmops/ansible.svg)](https://microbadger.com/images/plasmops/ansible/)
 
 # Ansible alpine based container image
 
@@ -48,7 +48,7 @@ docker run --name example-ansible $(pwd):/code zsh
 # starting and attaching to an existing project container
 docker start example-ansible && docker attach example-ansible
 
-# execing into the sanbox container
+# exec-ing into the sanbox container
 docker exec -ti --env COLUMNS=`tput cols` --env LINES=`tput lines` example-ansible zsh
 ```
 
@@ -58,7 +58,7 @@ Note that passing the given environment settings fixes the terminal size and col
 alias deti="docker exec -ti --env COLUMNS=`tput cols` --env LINES=`tput lines`"
 ```
 
-#### User environment and zsh theme and plugins
+#### User environment, zsh theme and plugins
 
 It's also possible to configure zsh **on-build** refer to the [section](#building-sandbox-container-image) and supply the following arguments as bellow:
 
@@ -71,7 +71,7 @@ By default `cloud` theme and `git` plugin are used by providing the above option
 
 While working as unprivileged user your home directory will be initialized since the beginning, so you are free to change your `~/.zshrc`  and any other directories in your home, mind that **once you delete container all the data** from your home directory **will be lost**!
 
-**Also there's a handy home directory auto-population ability** is available with the container, provide a space-separated list of directories inside your project directory such as: *`.aws`, `.ssh`* etc as `--env POPULATE=".aws .ssh"` and if they exist they will be auto-symlinked into your container home directory. By default `POPULATE=".ssh"`.
+**Also there's a handy home directory auto-population ability** available with this container, provide a space-separated list of directories inside your project directory such as: *`.aws`, `.ssh`* etc as `--env POPULATE=".aws .ssh"` and if they exist they will be auto-symlinked into your container home directory. By default `POPULATE=".ssh"`.
 
 ## License and Authors
 
