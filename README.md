@@ -71,7 +71,7 @@ By default `cloud` theme and `git` plugin are used by providing the above option
 
 While working as unprivileged user your home directory will be initialized since the beginning, so you are free to change your `~/.zshrc`  and any other directories in your home, mind that **once you delete container all the data** from your home directory **will be lost**!
 
-**Also there's a handy home directory auto-population ability** available with this container, provide a space-separated list of directories inside your project directory such as: *`.aws`, `.ssh`* etc as `--env POPULATE=".aws .ssh"` and if they exist they will be auto-symlinked into your container home directory. By default `POPULATE=".ssh"`.
+**Also there's a handy home directory auto-population ability** available with this container, provide a space-separated list of directories inside your project directory such as: *`.aws`, `.ssh`* etc as `--env POPULATE=".aws .ssh"` and if they exist they will be auto-symlinked into your container home directory. By default `POPULATE=".ssh .ansible.cfg"`.
 
 ## License and Authors
 

@@ -3,7 +3,7 @@ FROM stackfeed/alpine-python3:latest
 LABEL vendor=PlasmOPs \
       version_tags="[\"2.6\"]"
 
-ENV POPULATE=".ssh"
+ENV POPULATE=".ssh .ansible.cfg"
 
 # List of plugins to enable in ZSH and theme
 ONBUILD ARG ZSH_PLUGINS="git"
