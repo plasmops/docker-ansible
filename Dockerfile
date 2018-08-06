@@ -1,7 +1,9 @@
 FROM stackfeed/alpine-python3:latest
 
-LABEL vendor=StackFeed \
+LABEL vendor=PlasmOPs \
       version_tags="[\"2.6\"]"
+
+ENV POPULATE=".ssh"
 
 # List of plugins to enable in ZSH and theme
 ONBUILD ARG ZSH_PLUGINS="git"
