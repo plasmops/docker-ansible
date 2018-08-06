@@ -36,7 +36,7 @@ after_script:
 notifications:
   webhooks:
     urls:
-      - https://hooks.microbadger.com/images/${NAMESPACE}/${PROJECT}/${MICROBADGER_TOKEN}
+      - https://hooks.microbadger.com/images/plasmops/ansible/${MICROBADGER_TOKEN}
     on_success: always
     on_failure: never
     on_start:   never
