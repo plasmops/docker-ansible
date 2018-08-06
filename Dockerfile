@@ -30,6 +30,9 @@ RUN apk --no-cache --update add \
     mkdir -p /etc/ansible && \
     echo 'localhost' > /etc/ansible/hosts
 
+# Copy data
+ADD  ./entrypoint.sh /
+
 # Configure unprivileged user (remember NOT TO USE adduser from busybox!)
 ONBUILD RUN \
 # create user & group if those don't exist
@@ -38,8 +41,13 @@ ONBUILD RUN \
     echo "#${_UID} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${_USER} && \
     chmod 440 /etc/sudoers.d/${_USER}
 
-# Copy data
-ADD  ./entrypoint.sh /
+# Set unprivileged user
+ONBUILD USER $_UID:$_GID
+ONBUILD RUN \
+# install oh-my-zsh and enable given plugins and theme (use bash to install)
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" && \
+    awk '/^plugins=\(/,/\)/ { if ( $0 ~ /^plugins=\(/ ) print "plugins=('"${ZSH_PLUGINS}"')"; next } 1' ~/.zshrc > /tmp/.zshrc && \
+    mv /tmp/.zshrc ~/.zshrc && sed -i 's/\(ZSH_THEME\)=".*"/\1="'${ZSH_THEME}'"/' ~/.zshrc
 
 VOLUME ["/code"]
 WORKDIR "/code"

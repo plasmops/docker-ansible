@@ -43,7 +43,7 @@ First we need to initiate a container, you need to change directory of your ansi
 cd /path/to/example/project
 
 # initiate the sanbox container
-docker run --name example-ansible $(pwd):/code zsh
+docker run --name example-ansible -v $(pwd):/code ansible-sandbox zsh
 
 # starting and attaching to an existing project container
 docker start example-ansible && docker attach example-ansible
