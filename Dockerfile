@@ -15,7 +15,7 @@ ONBUILD ARG _UID=1000
 ONBUILD ARG _GID=1000
 
 RUN apk --no-cache --update add \
-        zsh sed vim sudo jq fping make git openssl openssh-client iptables rsync && \
+        zsh sed coreutils vim sudo jq fping make git openssl openssh-client iptables rsync && \
 # run-deps
     apk --no-cache --update add --virtual .run-deps \
         python3-dev libffi-dev openssl-dev build-base && \
