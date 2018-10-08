@@ -1,6 +1,6 @@
 FROM stackfeed/alpine-python3:latest
 
-LABEL vendor=PlasmOPs \
+LABEL vendor=PlasmOps \
       version_tags="[\"2.6\"]"
 
 ENV POPULATE=".ssh .ansible.cfg"
