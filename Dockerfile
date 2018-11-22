@@ -25,7 +25,7 @@ RUN apk --no-cache --update add \
     apk --no-cache --update add --virtual .run-deps \
         python3-dev libffi-dev openssl-dev build-base && \
 # install ansible
-    pip install 'ansible<=2.7' && \
+    pip install 'ansible<=2.7' boto3 && \
 # installing handy tools
     pip install --upgrade pywinrm && \
 # clean up
