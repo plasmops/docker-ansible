@@ -35,9 +35,6 @@ RUN apk --no-cache --update add \
     mkdir -p /etc/ansible && \
     echo 'localhost' > /etc/ansible/hosts
 
-# Install AWS CLI (latest) and utilities required
-RUN pip install awscli && apk add --no-cache groff less mailcap
-
 ## Install docker-ce
 #
 RUN \
