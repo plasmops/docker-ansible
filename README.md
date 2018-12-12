@@ -9,41 +9,33 @@ This container image wraps ansible on alpine, zsh, oh-my-zsh and bundles useful 
 In this case you can use the container image directly from docker hub, you will start a privileged container. This is useful for one-off commands, for example:
 
 ```bash
-docker run -it --rm -v $(pwd):/code plasmops/ansible ansible-playbook myplay.yml
+docker run -it --rm -v $(pwd):/code -w /code plasmops/ansible ansible-playbook myplay.yml
 ```
 
 ## Interactive mode
 
-Used to provide you ansible sandbox you can develop your playbooks in your favorite editor while applying configurations in a container sanbox. This mode requires an additional step to build a child container image based on `plasmops/ansible`, a newly built container image contains ***an underprivileged user*** matching your host system for ease of use and development.
+Used to provide you with and Ansible development sandbox. With everything ready-to-go. It's recommended that first you create a dedicated home volume to be able safely upgrade/reinstall container.
 
-### Building sandbox container image
+### Creating the toolbox container
 
 ```bash
-_USER=$(id -un)
-_UID=$(id -u)
-_GID=$(id -g)
+# create volume first
+docker volume create example-ansible-home
 
-mkdir -p /tmp/plasmops-ansible-sandbox && cd /tmp/plasmops-ansible-sandbox
-echo "FROM plasmops/ansible" > Dockerfile
-
-docker build --no-cache -t ansible-sandbox \
-             --build-arg _USER=${_USER} \
-             --build-arg _UID=${_UID} \
-             --build-arg _GID=${_GID} .
-
-cd - && rm -rf /tmp//plasmops-ansible-sandbox
+# initiate a container
+docker run --name example-ansible \
+   -u $(id -u):$(id -g) \
+   -v example-ansible-home:/home/fixuid \
+   -v $(pwd):/code -w /code plasmops/ansible
 ```
 
-### Using an underprivileged sandbox
+### Using the toolbox container
 
 First we need to initiate a container, you need to change directory of your ansible project (here example project).
 
 ```bash
 # change to a project directory
 cd /path/to/example/project
-
-# initiate the sanbox container
-docker run --name example-ansible -v $(pwd):/code ansible-sandbox zsh
 
 # starting and attaching to an existing project container
 docker start example-ansible && docker attach example-ansible
@@ -58,7 +50,7 @@ Note that passing the given environment settings fixes the terminal size and col
 alias deti="docker exec -ti --env COLUMNS=`tput cols` --env LINES=`tput lines`"
 ```
 
-#### User environment, zsh theme and plugins
+### User environment, zsh theme and plugins
 
 It's also possible to configure zsh **on-build** refer to the [section](#building-sandbox-container-image) and supply the following arguments as bellow:
 
@@ -68,10 +60,6 @@ It's also possible to configure zsh **on-build** refer to the [section](#buildin
 ```
 
 By default `cloud` theme and `git` plugin are used by providing the above options you can change this behavior.
-
-While working as unprivileged user your home directory will be initialized since the beginning, so you are free to change your `~/.zshrc`  and any other directories in your home, mind that **once you delete container all the data** from your home directory **will be lost**!
-
-**Also there's a handy home directory auto-population ability** available with this container, provide a space-separated list of directories inside your project directory such as: *`.aws`, `.ssh`* etc as `--env POPULATE=".aws .ssh"` and if they exist they will be auto-symlinked into your container home directory. By default `POPULATE=".ssh .ansible.cfg"`.
 
 ## License and Authors
 

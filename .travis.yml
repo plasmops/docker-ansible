@@ -17,7 +17,7 @@ before_script:
 
 script:
   - |-
-      docker-build -v $VERSION "$NAMESPACE/$PROJECT" \
+      docker-build -v $VERSION -l $VERSION "$NAMESPACE/$PROJECT" \
         --build-arg version_pin=${VERSION} \
         --build-arg version_pin="${VERSION_PIN}" \
           -f Dockerfile ./ || exit $?
