@@ -54,14 +54,16 @@ RUN \
     chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid && \
     printf "user: ${USER}\ngroup: ${GROUP}\n" > /etc/fixuid/config.yml && \
-    adduser -Ds /bin/zsh fixuid && \
+    adduser -Ds /bin/zsh ${USER} && \
     echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER} && \
     chmod 440 /etc/sudoers.d/${USER} && \
-# init oh-my-zsh
-    sudo -H -u ${USER} curl -#SL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh && \
+# init oh-my-zsh and start it to populate ~/.zshrc
+    sudo -H -u ${USER} sh -c "\
+        curl -#SL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | bash -s && \
+        zsh -c /bin/true \
+      " && \
 # move current user home into a "skeleton" directory
     mv /home/${USER} /home/_home-skeleton_ && mkdir /home/${USER} && chown ${USER}:${GROUP} /home/${USER}
 
 ADD ./entrypoint.sh /
-ENTRYPOINT ["/usr/local/bin/fixuid", "/entrypoint.sh"]
-WORKDIR /home/fixuid
+ENTRYPOINT ["/usr/local/bin/fixuid", "-q", "/entrypoint.sh"]
