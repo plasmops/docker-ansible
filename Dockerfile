@@ -1,31 +1,43 @@
-FROM stackfeed/alpine-python3:latest
+FROM python:3.5-alpine3.8
 
-LABEL vendor=PlasmOps \
-      version_tags="[\"2.6\"]"
-
-ENV POPULATE=".ssh .ansible.cfg"
+ARG version
+ARG version_pin
+LABEL com.plasmops.ansible.vendor=PlasmOps \
+      com.plasmops.ansible.vendor.version=${version}
 
 # Docker env variables
 ENV DOCKER_CHANNEL stable
 ENV DOCKER_VERSION 18.09.0
 ENV DOCKER_SHASUM 08795696e852328d66753963249f4396af2295a7fe2847b839f7102e25e47cb9
+ENV FIXUID_CHECKSUM=e901f3b21e62ebed92172df969bfc6cbfdfa8f53afb060f20f25e77dcbc20ff5
 
 # List of plugins to enable in ZSH and theme
-ONBUILD ARG ZSH_PLUGINS="git"
-ONBUILD ARG ZSH_THEME=cloud
+ENV ZSH_PLUGINS="git"
+ENV ZSH_THEME=cloud
 
-# Host user *IDs
-ONBUILD ARG _USER=user
-ONBUILD ARG _UID=1000
-ONBUILD ARG _GID=1000
+RUN \
+# install essential packages
+  apk --no-cache --update add curl bash zsh coreutils sudo openssl openssh-client iptables rsync \
+      sed jq fping make git  && \
+# install docker-ce binary
+  if ! curl -#SL -o docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/x86_64/docker-${DOCKER_VERSION}.tgz"; then \
+    echo >&2 "error: failed to download 'docker-${DOCKER_VERSION}' from '${DOCKER_CHANNEL}' for x86_64"; \
+    exit 1; \
+  fi; \
+  tar -xzf docker.tgz \
+    --strip-components 1 \
+    -C /usr/local/bin && \
+  echo "${DOCKER_SHASUM}  docker.tgz" | sha256sum -c && rm docker.tgz
+## We don't install custom modprobe, since haven't run into issues yet (see the link bellow)
+#  https://github.com/docker-library/docker/blob/master/18.06/modprobe.sh
+#
 
-RUN apk --no-cache --update add \
-        zsh sed coreutils vim sudo jq fping make git openssl openssh-client iptables rsync && \
+RUN \
 # run-deps
     apk --no-cache --update add --virtual .run-deps \
         python3-dev libffi-dev openssl-dev build-base && \
 # install ansible
-    pip install 'ansible<=2.7' boto3 && \
+    pip install "ansible${version_pin}" boto3 && \
 # installing handy tools
     pip install --upgrade pywinrm && \
 # clean up
@@ -33,44 +45,23 @@ RUN apk --no-cache --update add \
     rm -rf /root/* /root/.* &>/dev/null || /bin/true && \
 # adding hosts for convenience...
     mkdir -p /etc/ansible && \
-    echo 'localhost' > /etc/ansible/hosts
+    echo 'localhost' > /etc/ansible/hosts && \
+# install fixuid and create an unprivileged user (sudo enabled)
+    USER=fixuid && GROUP=fixuid && \
+    curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.4/fixuid-0.4-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
+    printf "${FIXUID_CHECKSUM}  /usr/local/bin/fixuid" | sha256sum -c && \
+    chown root:root /usr/local/bin/fixuid && \
+    chmod 4755 /usr/local/bin/fixuid && \
+    mkdir -p /etc/fixuid && \
+    printf "user: ${USER}\ngroup: ${GROUP}\n" > /etc/fixuid/config.yml && \
+    adduser -Ds /bin/zsh fixuid && \
+    echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER} && \
+    chmod 440 /etc/sudoers.d/${USER} && \
+# init oh-my-zsh
+    sudo -H -u ${USER} curl -#SL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh && \
+# move current user home into a "skeleton" directory
+    mv /home/${USER} /home/_home-skeleton_ && mkdir /home/${USER} && chown ${USER}:${GROUP} /home/${USER}
 
-## Install docker-ce
-#
-RUN \
-  if ! curl -#fL -o docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/x86_64/docker-${DOCKER_VERSION}.tgz"; then \
-    echo >&2 "error: failed to download 'docker-${DOCKER_VERSION}' from '${DOCKER_CHANNEL}' for x86_64"; \
-    exit 1; \
-  fi; \
-  \
-  tar -xzf docker.tgz \
-    --strip-components 1 \
-    -C /usr/local/bin && \
-  \
-  echo "${DOCKER_SHASUM}  docker.tgz" | sha256sum -c && rm docker.tgz
-## We don't install custom modprobe, since haven't run into issues yet (see the link bellow)
-#  https://github.com/docker-library/docker/blob/master/18.06/modprobe.sh
-#
-
-# Copy data
-ADD  ./entrypoint.sh /
-
-# Configure unprivileged user (remember NOT TO USE adduser from busybox!)
-ONBUILD RUN \
-# create user & group if those don't exist
-    ( getent group ${_GID} &>/dev/null || groupadd -g ${_GID} ${_USER} ) && \
-    ( id ${_UID} &>/dev/null || useradd -s /bin/zsh -md /home/${_USER} -u ${_UID} -g ${_GID} ${_USER} ) && \
-    echo "#${_UID} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${_USER} && \
-    chmod 440 /etc/sudoers.d/${_USER}
-
-# Set unprivileged user
-ONBUILD USER $_UID:$_GID
-ONBUILD RUN \
-# install oh-my-zsh and enable given plugins and theme (use bash to install)
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" && \
-    awk '/^plugins=\(/,/\)/ { if ( $0 ~ /^plugins=\(/ ) print "plugins=('"${ZSH_PLUGINS}"')"; next } 1' ~/.zshrc > /tmp/.zshrc && \
-    mv /tmp/.zshrc ~/.zshrc && sed -i 's/\(ZSH_THEME\)=".*"/\1="'${ZSH_THEME}'"/' ~/.zshrc
-
-VOLUME ["/code"]
-WORKDIR "/code"
-ENTRYPOINT ["/entrypoint.sh"]
+ADD ./entrypoint.sh /
+ENTRYPOINT ["/usr/local/bin/fixuid", "/entrypoint.sh"]
+WORKDIR /home/fixuid

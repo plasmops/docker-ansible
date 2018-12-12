@@ -6,23 +6,31 @@ env:
     - PROJECT=ansible
     - NAMESPACE=plasmops
     - PUSH_NAMESPACES=plasmops
+    - VERSION=2.7
+    - VERSION_PIN=<2.8
 
 install:
-  - curl -sSL https://github.com/stackfeed/ci-scripts/raw/master/install.sh  | sh -s
+  - curl -sSL https://github.com/stackfeed/ci-scripts/raw/master/install.sh | sh -s -- -r v0.2
 
 before_script:
   - export PATH=$PATH:~/ci-scripts
-  - git submodule init && git submodule update
 
 script:
-  - docker-build $NAMESPACE/$PROJECT -f ./Dockerfile . || exit $?
+  - |-
+      docker-build -v $VERSION "$NAMESPACE/$PROJECT" \
+        --build-arg version_pin=${VERSION} \
+        --build-arg version_pin="${VERSION_PIN}" \
+          -f Dockerfile ./ || exit $?
 
-# actual deployment happens here
+# deploy containers to hub.docker.com
 after_deploy:
   - |
       # Skip if we are not in the push namespace list
       ( echo "$PUSH_NAMESPACES" | grep -qw "${TRAVIS_REPO_SLUG%/*}" ) || exit 0
       docker-push -r "^$NAMESPACE/$PROJECT:?.*"
+
+      # update microbadger
+      curl -XPOST "https://hooks.microbadger.com/images/${NAMESPACE}/${PROJECT}/${MICROBADGER_TOKEN}"
 
 deploy:
   - provider: script
@@ -32,13 +40,3 @@ deploy:
 
 after_script:
   - docker images
-
-notifications:
-  webhooks:
-    urls:
-      - https://hooks.microbadger.com/images/plasmops/ansible/${MICROBADGER_TOKEN}
-    on_success: always
-    on_failure: never
-    on_start:   never
-    on_cancel:  never
-    on_error:   never
