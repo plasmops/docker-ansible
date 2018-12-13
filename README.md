@@ -4,6 +4,8 @@
 
 This container image wraps ansible on alpine, zsh, oh-my-zsh and bundles useful tools and CLI utilities. It can be used in two modes non-interactive and interactive.
 
+**IMPORTANT NOTICE**: don't use this container on production to avoid security problems **it uses [fixuid](https://github.com/boxboat/fixuid)**.
+
 ## Non-Interective mode
 
 In this case you can use the container image directly from docker hub, you will start a privileged container. This is useful for one-off commands, for example:

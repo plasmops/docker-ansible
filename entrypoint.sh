@@ -15,4 +15,4 @@ if [ -d "$HOME" ]; then
 fi
 
 # execute command or fallback into shell
-[ -n "$*" ] && exec $@ || exec /bin/zsh --login
+[ -n "$*" ] && exec "$@" || exec /bin/zsh --login
